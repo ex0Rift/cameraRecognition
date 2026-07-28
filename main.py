@@ -1,4 +1,4 @@
-import cv2
+import cv2 , math
 import mediapipe as mp
 
 #
@@ -12,6 +12,7 @@ mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
+#
 # different modes of detection
 # 0: facial , 1: hands
 mode = 1
@@ -47,6 +48,42 @@ def main():
             frame_rgb = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             result = detector.process(frame_rgb)
 
+            # get frame dimentions for normalisation
+            h , w , _ = frame.shape
+
+            #logic for hands
+            if mode == 1:
+                if result.multi_hand_landmarks:
+                    # only work if there are two or more hands on display
+                    if len(result.multi_hand_landmarks) >= 2:
+                        # get tip of each index finger
+                        one_index = result.multi_hand_landmarks[0].landmark[8]
+                        two_index = result.multi_hand_landmarks[1].landmark[8]
+                        # normalise the coordinates to the screen
+                        one_index_n = {"x":int(one_index.x * w), "y":int(one_index.y * h)}
+                        two_index_n = {"x":int(two_index.x * w), "y":int(two_index.y * h)}
+
+                        #find the distance and normalise it to a useable number
+                        distance = int(math.sqrt((two_index.x - one_index.x)**2 + (two_index.y - one_index.y)**2)*1000)
+
+                        print(distance)
+
+                    # THIS SECTION WILL NEVER EVER RUN
+                    # it is here for personal reference
+                    if 1 != 1:
+                        for hand_landmarks in result.multi_hand_landmarks:
+                            #get the thumb and index finger and save to variables
+                            thumb = hand_landmarks.landmark[0]
+                            index = hand_landmarks.landmark[8]
+                            # workout the distance betweent eh tip of the index finger and thumb and make the number more useable
+                            distance = int(math.sqrt((index.x - thumb.x)**2 + (index.y - thumb.y)**2)*1000)
+                            if distance < 150:
+                                print(f"pinching! {distance}")
+                            else:
+                                print(f'bad {distance}')
+
+            #DRAWING
+            #
             # draw according to which detection mode needing specific drawing requirments
             match mode:
                 case 0:# if any faces are seen draw the detection to the frame
@@ -57,8 +94,9 @@ def main():
                     if result.multi_hand_landmarks:
                         for hand_landmarks in result.multi_hand_landmarks:
                             mp_drawing.draw_landmarks(frame,hand_landmarks,mp_hands.HAND_CONNECTIONS,mp_drawing_styles.get_default_hand_landmarks_style(),mp_drawing_styles.get_default_hand_connections_style())
+                        if len(result.multi_hand_landmarks) >= 2:
+                            cv2.line(frame, (one_index_n["x"],one_index_n["y"]),(two_index_n["x"],two_index_n["y"]),(255,0,0),2)
 
-            #logic
 
             # show the webcam
             cv2.imshow('webcam test',frame)
