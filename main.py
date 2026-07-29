@@ -58,7 +58,8 @@ def main():
                 print('failed to grab frame. Trying a new camera...')
                 frameFail = True
                 break
-
+            #flip the frame so it is more natural to look at
+            cv2.flip(frame,1)
             #convert frame to rgb for mediapipe
             frame_rgb = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             result = detector.process(frame_rgb)
@@ -80,23 +81,6 @@ def main():
 
                         #find the distance and normalise it to a useable number
                         distance = int(math.sqrt((two_index.x - one_index.x)**2 + (two_index.y - one_index.y)**2)*1000)
-
-                        # print(distance)
-
-                    # THIS SECTION WILL NEVER EVER RUN
-                    # it is here for personal reference
-                    if 1 != 1:
-                        for hand_landmarks in result.multi_hand_landmarks:
-                            #get the thumb and index finger and save to variables
-                            thumb = hand_landmarks.landmark[0]
-                            index = hand_landmarks.landmark[8]
-                            # workout the distance betweent eh tip of the index finger and thumb and make the number more useable
-                            distance = int(math.sqrt((index.x - thumb.x)**2 + (index.y - thumb.y)**2)*1000)
-                            if distance < 150:
-                                print(f"pinching! {distance}")
-                            else:
-                                print(f'bad {distance}')
-
             #DRAWING
             #
             # draw according to which detection mode needing specific drawing requirments
@@ -113,7 +97,14 @@ def main():
                         if len(result.multi_hand_landmarks) >= 2:
                             # draws the line between index fingers
                             cv2.line(frame, (one_index_n["x"],one_index_n["y"]),(two_index_n["x"],two_index_n["y"]),(255,0,0),2)
-
+                        else:
+                            # tell user both hands need to be on the screen
+                            cv2.putText(frame,"Show BOTH Hands!",(10,50),cv2.FONT_HERSHEY_DUPLEX,1,(0,0,255),3)
+                    else:
+                        # tell the user to show their hands
+                        cv2.putText(frame,"Show Hands!",(10,50),cv2.FONT_HERSHEY_DUPLEX,1,(0,0,255),3)
+            # always tell the user that q can be pressed to quit the program
+            cv2.putText(frame,"Press Q to quit",(w-260,h-25),cv2.FONT_HERSHEY_DUPLEX,1,(255,255,255),2)
 
             # show the webcam
             cv2.imshow('webcam test',frame)
