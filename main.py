@@ -17,16 +17,30 @@ mp_drawing_styles = mp.solutions.drawing_styles
 # 0: facial , 1: hands
 mode = 1
 
-def main():
-    # make the video capture device
-    video_capture = cv2.VideoCapture(1)
-    # spit out an error if the camera cannot be found 
-    if not video_capture.isOpened():
-        print("Could not open webcam.")
-        return
-    # confirm that the camera is open if successfull
-    print('webcam is open. "q" to quit')
+frameFail = False
+camera = -1
 
+def main():
+    global camera , frameFail
+    #loops a total of 4 times to try 4 different camera options and tries to open them
+    for i in range (0,4):
+        # make the video capture device
+        video_capture = cv2.VideoCapture(i)
+        if video_capture.isOpened():
+            # in case of frame failiour prevent opening the same camera twice
+            if i != camera:
+                # confirm that the camera is open if successfull
+                print('webcam is open. "q" to quit')
+                camera = i
+                break
+        else:
+            # spit out an error if the camera cannot be found 
+            print('camera not found, trying again...')
+    if not video_capture.isOpened():
+        #no camera could be found, quit
+        print('No useable cameras! quitting...')
+        return
+    
     # set up the detecting model depending on the mode
     match mode:
         case 0:
@@ -41,7 +55,8 @@ def main():
             ret, frame = video_capture.read()
             # error out if no frame
             if not ret:
-                print('failed to grab frame.')
+                print('failed to grab frame. Trying a new camera...')
+                frameFail = True
                 break
 
             #convert frame to rgb for mediapipe
@@ -66,7 +81,7 @@ def main():
                         #find the distance and normalise it to a useable number
                         distance = int(math.sqrt((two_index.x - one_index.x)**2 + (two_index.y - one_index.y)**2)*1000)
 
-                        print(distance)
+                        # print(distance)
 
                     # THIS SECTION WILL NEVER EVER RUN
                     # it is here for personal reference
@@ -94,7 +109,9 @@ def main():
                     if result.multi_hand_landmarks:
                         for hand_landmarks in result.multi_hand_landmarks:
                             mp_drawing.draw_landmarks(frame,hand_landmarks,mp_hands.HAND_CONNECTIONS,mp_drawing_styles.get_default_hand_landmarks_style(),mp_drawing_styles.get_default_hand_connections_style())
+                        # only does these drawings if both hands are detected
                         if len(result.multi_hand_landmarks) >= 2:
+                            # draws the line between index fingers
                             cv2.line(frame, (one_index_n["x"],one_index_n["y"]),(two_index_n["x"],two_index_n["y"]),(255,0,0),2)
 
 
@@ -104,6 +121,11 @@ def main():
             #check for key press ' q ' if so break mainloop
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+    #if program quit because of frame error try another camera
+    if frameFail:
+        frameFail = False
+        main()
     # release and destroy windows after quitting 
     video_capture.release()
     cv2.destroyAllWindows()
