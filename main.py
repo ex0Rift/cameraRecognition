@@ -26,9 +26,10 @@ frameFail = False
 camera = -1
 ball = Vector(0,0)
 force = Vector(20,20)
+line_collision_cooldown = 10
 
 def main():
-    global camera , frameFail , ball , force
+    global camera , frameFail , ball , force , line_collision_cooldown
     #loops a total of 4 times to try 4 different camera options and tries to open them
     for i in range (0,4):
         # make the video capture device
@@ -66,7 +67,7 @@ def main():
                 frameFail = True
                 break
             #flip the frame so it is more natural to look at
-            cv2.flip(frame,1)
+            frame = cv2.flip(frame,1)
             #convert frame to rgb for mediapipe
             frame_rgb = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             result = detector.process(frame_rgb)
@@ -85,25 +86,49 @@ def main():
                         # normalise the coordinates to the screen
                         one_index_n = Vector(int(one_index.x * w), int(one_index.y * h))
                         two_index_n = Vector(int(two_index.x * w), int(two_index.y * h))
-
-                        #find the distance and normalise it to a useable number
-                        distance = int(math.sqrt((two_index.x - one_index.x)**2 + (two_index.y - one_index.y)**2)*1000)
-
+            #
             # logic for the ball
             #
-
             #move the ball by force
             ball.x += force.x
             ball.y += force.y
-
             #collisions with screen sides
             if ball.y >= h or ball.y <= 0:
                 force.y = -force.y
             if ball.x >= w or ball.x <= 0:
                 force.x = -force.x
-
-            #collision with the line between index fingers
-            
+            #Collision between the line drawn from index fingers and ball
+            # line collision has a cooldown becuase the line moves alot from user movement
+            if line_collision_cooldown == 0:
+                #reset the cooldown
+                line_collision_cooldown = 10
+                # if hands exist
+                if result.multi_hand_landmarks:
+                    # only work if there are two or more hands on display
+                    if len(result.multi_hand_landmarks) >= 2:
+                        # calculate the individual distances and length
+                        dx , dy = two_index_n.x - one_index_n.x , two_index_n.y - one_index_n.y
+                        length_sq = dx**2 + dy**2
+                        # project onto a line clamped by the segment to find the cloesest point to the ball
+                        t = max(0, min(1, ((ball.x - one_index_n.x) * dx + (ball.y - one_index_n.y) * dy) / length_sq))
+                        #get the cloesest point on the line from the ball
+                        closest_x = one_index_n.x + t * dx
+                        closest_y = one_index_n.y + t * dy
+                        # calcualte the distace of the ball from the closest point on the line
+                        distance = math.hypot(ball.x - closest_x, ball.y - closest_y)
+                        # if the distance is shorter than minimum distance it counts as a hit
+                        if (distance <= 25):
+                            #This code only runs if the ball "hits" the line
+                            if abs(two_index_n.y - one_index_n.y) < 100:
+                                force.y = -force.y
+                            elif abs(two_index_n.x - one_index_n.x) < 100:
+                                force.x = -force.x
+                            else:
+                                force.y = -force.y
+                                force.x = -force.x
+            else:
+                #itterate the cooldown
+                line_collision_cooldown -= line_collision_cooldown
             #DRAWING
             #
             # draw according to which detection mode needing specific drawing requirments
