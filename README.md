@@ -5,6 +5,13 @@
 
 im yet to put an image and video here
 
+## Try it yourself!
+
+Head to releases tab of the git repository and download the ```.dmg```.
+#### Please Note.
+> * This release has been made for intel x86_64 Mac
+> * It is an unsigned application so when opening right click then open
+> * A camera is REQUIRED (i think thats obvious)
 
 ## Make changes yourself
 this is for mac devices with brew installed, if brew is not installed refer to [HomeBrew Install Docs](https://github.com/Homebrew/install "@Homebrew git") to install brew.
