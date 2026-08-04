@@ -3,7 +3,9 @@
 
 ## Demo of program
 
-im yet to put an image and video here
+<img width="1392" height="860" alt="Screenshot 2026-08-04 at 21 47 19" src="https://github.com/user-attachments/assets/7e55f374-245b-43c9-aca0-a366e8f875dc" />
+
+<img width="600" height="375" alt="ScreenRecording2026-08-04at21 45 02-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/9f75bc56-4356-4455-acee-a57ebe05d52a" />
 
 ## Try it yourself!
 
